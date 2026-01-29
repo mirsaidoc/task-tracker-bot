@@ -7,7 +7,8 @@ import threading
 from datetime import datetime
 
 # 🔑 PUT YOUR BOT TOKEN HERE
-TOKEN = "8273793653:AAEPXeyeYaLONA65H00FuqV-WEdgG0zy7cs"
+import os
+TOKEN = os.getenv("BOT_TOKEN")
 bot = telebot.TeleBot(TOKEN)
 
 # ================= DATABASE =================
@@ -164,3 +165,4 @@ threading.Thread(target=run_schedule, daemon=True).start()
 
 # ================= RUN BOT =================
 bot.infinity_polling()
+
