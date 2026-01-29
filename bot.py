@@ -9,6 +9,9 @@ import os
 
 # ================= BOT TOKEN =================
 TOKEN = os.getenv("BOT_TOKEN")
+if not TOKEN:
+    raise ValueError("BOT_TOKEN is not set")
+
 bot = telebot.TeleBot(TOKEN)
 
 # ================= DATABASE =================
@@ -67,7 +70,11 @@ def save_task(message):
 def start_task(message):
     user_id = message.chat.id
 
-    if user_id not in active_task or active_task[user_id]["start"] is not None:
+    if user_id in active_task and active_task[user_id]["start"] is not None:
+        bot.send_message(user_id, "⚠️ A task is already running.")
+        return
+
+    if user_id not in active_task:
         bot.send_message(user_id, "❌ Create a task first.")
         return
 
@@ -88,7 +95,7 @@ def stop_task(message):
     end_time = int(time.time())
     duration = (end_time - start_time) // 60
     task_name = active_task[user_id]["name"]
-    date = datetime.now().strftime("%Y-%m-%d")
+    date = datetime.utcnow().strftime("%Y-%m-%d")
 
     cursor.execute(
         "INSERT INTO tasks VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -109,7 +116,7 @@ def stop_task(message):
 @bot.message_handler(func=lambda m: m.text == "📊 My Today Stats")
 def my_today_stats(message):
     user_id = message.chat.id
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.utcnow().strftime("%Y-%m-%d")
 
     cursor.execute("""
         SELECT task_name, duration
@@ -136,7 +143,7 @@ def my_today_stats(message):
 # ================= GLOBAL TODAY STATS =================
 @bot.message_handler(func=lambda m: m.text == "🌍 Global Today Stats")
 def global_today_stats(message):
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.utcnow().strftime("%Y-%m-%d")
 
     cursor.execute("""
         SELECT username, task_name, duration
@@ -168,7 +175,7 @@ def global_today_stats(message):
 
 # ================= DAILY AUTO REPORT =================
 def daily_report():
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.utcnow().strftime("%Y-%m-%d")
 
     cursor.execute("SELECT DISTINCT user_id FROM tasks")
     users = cursor.fetchall()
